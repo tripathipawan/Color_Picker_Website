@@ -264,8 +264,17 @@ const Generate = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-8rem)] lg:h-[calc(100vh-4rem)]">
-      <div className="flex flex-1 flex-col sm:flex-row min-h-0">
+    /*
+     * FIX: Correct height accounting for both navbars.
+     * Mobile: top navbar (4rem) + bottom nav (4rem) = 8rem total chrome
+     * Desktop (lg): only top navbar (4rem)
+     */
+    <div
+      className="flex flex-col lg:h-[calc(100vh-4rem)]"
+      style={{ height: "calc(100dvh - 8rem)" }}
+    >
+      {/* Swatch area — fills remaining space, overflow hidden to prevent scroll */}
+      <div className="flex flex-1 flex-col sm:flex-row min-h-0 overflow-y-hidden overflow-x-auto">
         <AnimatePresence mode="popLayout">
           {swatches.map((swatch, idx) => {
             const contrast = getContrastColor(swatch.color);
@@ -277,37 +286,35 @@ const Generate = () => {
                 animate={{ opacity: 1, scaleX: 1 }}
                 exit={{ opacity: 0, scaleX: 0, width: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="flex-1 flex flex-col items-center justify-center gap-4 cursor-grab active:cursor-grabbing relative group min-h-[100px]"
+                /* min-w ensures each swatch has enough room; overflow-hidden clips text inside */
+                className="flex-1 flex flex-col items-center justify-center gap-3 cursor-grab active:cursor-grabbing relative group min-h-0 min-w-[90px] sm:min-w-[110px] overflow-hidden"
                 style={{ backgroundColor: swatch.color }}
                 draggable
                 onDragStart={() => handleDragStart(idx)}
                 onDragOver={(e) => handleDragOver(e, idx)}
                 onDragEnd={() => setDragIdx(null)}
               >
+                {/* Hex label — rotated vertically on narrow swatches (< sm), horizontal on wider */}
                 <motion.span
                   key={`${swatch.color}-${genKey}`}
                   initial={{ opacity: 0, rotateX: 90 }}
                   animate={{ opacity: 1, rotateX: 0 }}
                   transition={{ duration: 0.4, delay: idx * 0.06 }}
-                  className="text-xl sm:text-2xl font-bold select-all"
+                  className="font-bold select-all text-[11px] tracking-wider sm:text-lg lg:text-2xl sm:tracking-normal px-1 text-center w-full truncate"
                   style={{ color: contrast }}
                 >
                   {swatch.color}
                 </motion.span>
 
-                {/* Color info on hover */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
+                {/* Color info on hover (sm+ only) */}
+                <div className="absolute bottom-10 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:block pointer-events-none">
                   {(() => {
                     const rgb = hexToRgb(swatch.color);
                     if (!rgb) return null;
                     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
                     return (
                       <div
-                        className="text-[10px] font-mono space-y-0.5"
+                        className="text-[10px] font-mono space-y-0.5 px-1"
                         style={{ color: contrast }}
                       >
                         <div>
@@ -316,48 +323,55 @@ const Generate = () => {
                         <div>
                           hsl({hsl.h}, {hsl.s}%, {hsl.l}%)
                         </div>
-                        <div>{getColorName(swatch.color)}</div>
+                        <div className="truncate px-2">
+                          {getColorName(swatch.color)}
+                        </div>
                       </div>
                     );
                   })()}
-                </motion.div>
+                </div>
 
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Action buttons — centred, below hex label */}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <motion.button
                     onClick={() => toggleLock(swatch.id)}
                     whileTap={{ rotate: swatch.locked ? -20 : 20 }}
-                    className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-black/10 transition-colors"
                     style={{ color: contrast }}
+                    title={swatch.locked ? "Unlock" : "Lock"}
                   >
                     {swatch.locked ? (
-                      <Lock className="h-5 w-5" />
+                      <Lock className="h-4 w-4" />
                     ) : (
-                      <Unlock className="h-5 w-5" />
+                      <Unlock className="h-4 w-4" />
                     )}
                   </motion.button>
                   <button
                     onClick={() => copyHex(swatch.color)}
-                    className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-black/10 transition-colors"
                     style={{ color: contrast }}
+                    title="Copy HEX"
                   >
-                    <Copy className="h-5 w-5" />
+                    <Copy className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => removeSwatch(swatch.id)}
-                    className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-black/10 transition-colors"
                     style={{ color: contrast }}
+                    title="Remove"
                   >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
 
+                {/* Locked indicator — top-right corner, always visible when locked */}
                 {swatch.locked && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute top-3 right-3"
+                    className="absolute top-2 right-2"
                   >
-                    <Lock className="h-4 w-4" style={{ color: contrast }} />
+                    <Lock className="h-3.5 w-3.5" style={{ color: contrast }} />
                   </motion.div>
                 )}
               </motion.div>
@@ -366,166 +380,269 @@ const Generate = () => {
         </AnimatePresence>
       </div>
 
+      {/* CVD Simulator */}
       {showCVD && (
-        <div className="px-4 py-3 border-t border-border bg-card/50">
+        <div className="px-4 py-3 border-t border-border bg-card/50 shrink-0">
           <PaletteCVDSimulator colors={swatches.map((s) => s.color)} />
         </div>
       )}
 
-      <div className="border-t border-border bg-card px-3 sm:px-4 py-3 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Button
-            onClick={generate}
-            className="gap-2"
-            aria-label="Generate new palette (Space)"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Generate
-          </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button
-                  variant="outline"
-                  onClick={addSwatch}
-                  className="gap-2"
-                  disabled={swatches.length >= 8}
-                  aria-label="Add color"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {swatches.length >= 8
-                ? "Maximum 8 colors"
-                : "Add a new color (max 8)"}
-            </TooltipContent>
-          </Tooltip>
-          <span className="text-xs text-muted-foreground hidden md:inline">
-            Press SPACE to generate
-          </span>
-        </div>
+      {/* ── BOTTOM TOOLBAR ── */}
+      <div className="border-t border-border bg-card shrink-0">
+        {/* MOBILE (< sm): two compact rows */}
+        <div className="sm:hidden flex flex-col gap-1.5 px-3 py-2">
+          {/* Row 1: Generate | Add | CVD | Share */}
+          <div className="flex items-center gap-1.5">
+            <Button onClick={generate} className="gap-1.5 flex-1 h-9 text-sm">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Generate
+            </Button>
+            <Button
+              variant="outline"
+              onClick={addSwatch}
+              className="gap-1.5 h-9 text-sm px-3 shrink-0"
+              disabled={swatches.length >= 8}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </Button>
+            <Button
+              variant={showCVD ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowCVD(!showCVD)}
+              className="h-9 px-2.5 shrink-0"
+            >
+              <Eye className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={shareUrl}
+              className="h-9 px-2.5 shrink-0"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
 
-        <div className="flex items-center gap-2 flex-nowrap overflow-x-auto scrollbar-hide max-w-full">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={showCVD ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowCVD(!showCVD)}
-                className="gap-1 shrink-0"
-                aria-pressed={showCVD}
-                aria-label="Toggle color blindness simulator"
-              >
-                <Eye className="h-3.5 w-3.5" /> CVD
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Color blindness simulator</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
+          {/* Row 2: Export | PNG | PDF */}
+          <div className="flex items-center gap-1.5">
+            <div className="relative flex-1">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={shareUrl}
-                className="gap-1 shrink-0"
-                aria-label="Copy share URL"
+                onClick={() => setShowExport(!showExport)}
+                className="gap-1 w-full h-9"
+                disabled={swatches.length === 0}
               >
-                <Share2 className="h-3.5 w-3.5" />{" "}
-                <span className="hidden sm:inline">Share</span>
+                <Code className="h-3.5 w-3.5" /> Export ▾
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>Copy a share URL with these colors</TooltipContent>
-          </Tooltip>
+              <AnimatePresence>
+                {showExport && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    role="menu"
+                    className="absolute bottom-full mb-2 left-0 z-30 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+                  >
+                    {[
+                      { label: "CSS Variables", fn: copyCssVars },
+                      { label: "Tailwind Config", fn: copyTailwindConfig },
+                      { label: "SCSS Variables", fn: copyScssVars },
+                      { label: "HEX Array", fn: copyHexArray },
+                      { label: "RGB Array", fn: copyRgbArray },
+                      { label: "HSL Array", fn: copyHslArray },
+                    ].map(({ label, fn }) => (
+                      <button
+                        key={label}
+                        role="menuitem"
+                        onClick={() => {
+                          fn();
+                          setShowExport(false);
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-muted transition-colors"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadPng}
+              className="gap-1 h-9 flex-1"
+              disabled={swatches.length === 0}
+            >
+              <Download className="h-3.5 w-3.5" /> PNG
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadPdf}
+              className="gap-1 h-9 flex-1"
+              disabled={swatches.length === 0}
+            >
+              <FileText className="h-3.5 w-3.5" /> PDF
+            </Button>
+          </div>
+        </div>
 
-          <div className="relative shrink-0">
+        {/* DESKTOP (sm+): single row */}
+        <div className="hidden sm:flex items-center justify-between px-4 py-3 gap-2">
+          {/* Left */}
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={generate}
+              className="gap-2"
+              aria-label="Generate new palette (Space)"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Generate
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="outline"
+                    onClick={addSwatch}
+                    className="gap-2"
+                    disabled={swatches.length >= 8}
+                    aria-label="Add color"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {swatches.length >= 8
+                  ? "Maximum 8 colors"
+                  : "Add a new color (max 8)"}
+              </TooltipContent>
+            </Tooltip>
+            <span className="text-xs text-muted-foreground hidden md:inline">
+              Press SPACE to generate
+            </span>
+          </div>
+
+          {/* Right */}
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={showCVD ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowCVD(!showCVD)}
+                  className="gap-1 shrink-0"
+                  aria-pressed={showCVD}
+                >
+                  <Eye className="h-3.5 w-3.5" /> CVD
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Color blindness simulator</TooltipContent>
+            </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowExport(!showExport)}
-                  className="gap-1"
-                  aria-haspopup="menu"
-                  aria-expanded={showExport}
-                  aria-label="Export code formats"
-                  disabled={swatches.length === 0}
+                  onClick={shareUrl}
+                  className="gap-1 shrink-0"
                 >
-                  <Code className="h-3.5 w-3.5" /> Export ▾
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span className="hidden md:inline">Share</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                Copy as CSS / Tailwind / SCSS / arrays
-              </TooltipContent>
+              <TooltipContent>Copy share URL</TooltipContent>
             </Tooltip>
-            <AnimatePresence>
-              {showExport && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                  role="menu"
-                  className="absolute bottom-full mb-2 right-0 z-30 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+
+            <div className="relative shrink-0">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowExport(!showExport)}
+                    className="gap-1"
+                    aria-haspopup="menu"
+                    aria-expanded={showExport}
+                    disabled={swatches.length === 0}
+                  >
+                    <Code className="h-3.5 w-3.5" /> Export ▾
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Copy as CSS / Tailwind / SCSS / arrays
+                </TooltipContent>
+              </Tooltip>
+              <AnimatePresence>
+                {showExport && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    role="menu"
+                    className="absolute bottom-full mb-2 right-0 z-30 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+                  >
+                    {[
+                      { label: "CSS Variables", fn: copyCssVars },
+                      { label: "Tailwind Config", fn: copyTailwindConfig },
+                      { label: "SCSS Variables", fn: copyScssVars },
+                      { label: "HEX Array", fn: copyHexArray },
+                      { label: "RGB Array", fn: copyRgbArray },
+                      { label: "HSL Array", fn: copyHslArray },
+                    ].map(({ label, fn }) => (
+                      <button
+                        key={label}
+                        role="menuitem"
+                        onClick={() => {
+                          fn();
+                          setShowExport(false);
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-muted transition-colors"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadPng}
+                  className="gap-1 shrink-0"
+                  disabled={swatches.length === 0}
                 >
-                  {[
-                    { label: "CSS Variables", fn: copyCssVars },
-                    { label: "Tailwind Config", fn: copyTailwindConfig },
-                    { label: "SCSS Variables", fn: copyScssVars },
-                    { label: "HEX Array", fn: copyHexArray },
-                    { label: "RGB Array", fn: copyRgbArray },
-                    { label: "HSL Array", fn: copyHslArray },
-                  ].map(({ label, fn }) => (
-                    <button
-                      key={label}
-                      role="menuitem"
-                      onClick={() => {
-                        fn();
-                        setShowExport(false);
-                      }}
-                      className="block w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-muted transition-colors"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <Download className="h-3.5 w-3.5" /> PNG
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Download PNG</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadPdf}
+                  className="gap-1 shrink-0"
+                  disabled={swatches.length === 0}
+                >
+                  <FileText className="h-3.5 w-3.5" /> PDF
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Download PDF</TooltipContent>
+            </Tooltip>
           </div>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={downloadPng}
-                className="gap-1 shrink-0"
-                disabled={swatches.length === 0}
-                aria-label="Download palette as PNG"
-              >
-                <Download className="h-3.5 w-3.5" /> PNG
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Download a PNG image</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={downloadPdf}
-                className="gap-1 shrink-0"
-                disabled={swatches.length === 0}
-                aria-label="Download palette as PDF"
-              >
-                <FileText className="h-3.5 w-3.5" /> PDF
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Download a print-ready PDF</TooltipContent>
-          </Tooltip>
         </div>
       </div>
     </div>

@@ -25,17 +25,94 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-        <Route path="/explore" element={<PageTransition><Explore /></PageTransition>} />
-        <Route path="/generate" element={<PageTransition><Generate /></PageTransition>} />
-        <Route path="/gradient" element={<PageTransition><GradientGenerator /></PageTransition>} />
-        <Route path="/image-picker" element={<PageTransition><ImagePicker /></PageTransition>} />
-        <Route path="/color/:hex" element={<PageTransition><ColorDetail /></PageTransition>} />
-        <Route path="/contrast" element={<PageTransition><ContrastChecker /></PageTransition>} />
-        <Route path="/harmony" element={<PageTransition><Harmony /></PageTransition>} />
-        <Route path="/saved" element={<PageTransition><Saved /></PageTransition>} />
-        <Route path="/palette" element={<PageTransition><SharedPalette /></PageTransition>} />
-        <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+        <Route
+          path="/"
+          element={
+            <PageTransition>
+              <Index />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/explore"
+          element={
+            <PageTransition>
+              <Explore />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/generate"
+          element={
+            <PageTransition>
+              <Generate />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/gradient"
+          element={
+            <PageTransition>
+              <GradientGenerator />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/image-picker"
+          element={
+            <PageTransition>
+              <ImagePicker />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/color/:hex"
+          element={
+            <PageTransition>
+              <ColorDetail />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/contrast"
+          element={
+            <PageTransition>
+              <ContrastChecker />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/harmony"
+          element={
+            <PageTransition>
+              <Harmony />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/saved"
+          element={
+            <PageTransition>
+              <Saved />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/palette"
+          element={
+            <PageTransition>
+              <SharedPalette />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );
@@ -44,7 +121,14 @@ const AnimatedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster position="top-right" richColors />
+      <Toaster
+        position="top-center"
+        richColors
+        offset={12}
+        duration={2000}
+        closeButton
+        toastOptions={{ style: { maxWidth: "min(360px, calc(100vw - 2rem))" } }}
+      />
       <BrowserRouter>
         <AppNavbar />
         <div className="pb-16 lg:pb-0">

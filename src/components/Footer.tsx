@@ -1,27 +1,45 @@
-import { Link } from 'react-router-dom';
-import { Palette } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Palette } from "lucide-react";
+
+const navLinks = [
+  { to: "/explore", label: "Explore" },
+  { to: "/generate", label: "Generator" },
+  { to: "/gradient", label: "Gradients" },
+  { to: "/contrast", label: "Contrast" },
+  { to: "/harmony", label: "Harmony" },
+  { to: "/saved", label: "Saved" },
+];
 
 const Footer = () => (
-  <footer className="border-t border-border bg-muted/20 py-12">
-    <div className="container mx-auto px-4">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <Link to="/" className="flex items-center gap-2 text-lg font-bold text-foreground">
+  <footer className="border-t border-border bg-muted/20 py-10">
+    <div className="container mx-auto px-4 max-w-5xl">
+      <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-center lg:justify-between lg:text-left">
+        {/* Logo */}
+        <Link
+          to="/"
+          className="flex items-center gap-2 text-lg font-bold text-foreground shrink-0"
+        >
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
             <Palette className="h-4 w-4 text-primary-foreground" />
           </div>
           PaletteFlow
         </Link>
 
-        <nav className="flex items-center gap-6 text-sm text-muted-foreground">
-          <Link to="/explore" className="hover:text-foreground transition-colors">Explore</Link>
-          <Link to="/generate" className="hover:text-foreground transition-colors">Generator</Link>
-          <Link to="/gradient" className="hover:text-foreground transition-colors">Gradients</Link>
-          <Link to="/contrast" className="hover:text-foreground transition-colors">Contrast</Link>
-          <Link to="/harmony" className="hover:text-foreground transition-colors">Harmony</Link>
-          <Link to="/saved" className="hover:text-foreground transition-colors">Saved</Link>
+        {/* Nav links — 3 col grid on mobile, flex row on desktop */}
+        <nav className="grid grid-cols-3 gap-x-6 gap-y-3 lg:flex lg:flex-row lg:flex-wrap lg:gap-x-5 lg:gap-y-0">
+          {navLinks.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
 
-        <p className="text-sm text-muted-foreground">
+        {/* Tagline */}
+        <p className="text-sm text-muted-foreground shrink-0">
           Made with ❤️ for designers
         </p>
       </div>

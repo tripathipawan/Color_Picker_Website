@@ -13,7 +13,7 @@ const mainItems = [
 ];
 
 const moreItems = [
-  { to: '/explore', label: 'Explo~re', icon: Sparkles },
+  { to: '/explore', label: 'Explore', icon: Sparkles },
   { to: '/gradient', label: 'Gradient', icon: Blend },
   { to: '/image-picker', label: 'Image', icon: Image },
   { to: '/contrast', label: 'Contrast', icon: Contrast },
