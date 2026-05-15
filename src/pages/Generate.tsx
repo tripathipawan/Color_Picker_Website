@@ -1,14 +1,35 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Lock, Unlock, Copy, Trash2, Plus, RefreshCw, Download, FileText, Share2, Code, CloudUpload, Eye } from 'lucide-react';
-import PaletteCVDSimulator from '@/components/PaletteCVDSimulator';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { randomHex, getContrastColor, hexToRgb, rgbToHsl, getColorName } from '@/lib/colors';
-import { usePaletteStore } from '@/store/paletteStore';
-import { useCloudPalettes } from '@/hooks/useCloudPalettes';
+import { useState, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  Lock,
+  Unlock,
+  Copy,
+  Trash2,
+  Plus,
+  RefreshCw,
+  Download,
+  FileText,
+  Share2,
+  Code,
+  Eye,
+} from "lucide-react";
+import PaletteCVDSimulator from "@/components/PaletteCVDSimulator";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  randomHex,
+  getContrastColor,
+  hexToRgb,
+  rgbToHsl,
+  getColorName,
+} from "@/lib/colors";
+import { usePaletteStore } from "@/store/paletteStore";
 
 interface Swatch {
   id: string;
@@ -24,14 +45,20 @@ function buildMinimalPdf(w: number, h: number, stream: string): string {
     `4 0 obj<</Length ${stream.length}>>stream\n${stream}\nendstream\nendobj`,
     `5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj`,
   ];
-  let body = '';
+  let body = "";
   const offsets: number[] = [];
-  const header = '%PDF-1.4\n';
+  const header = "%PDF-1.4\n";
   let pos = header.length;
-  objs.forEach(o => { offsets.push(pos); body += o + '\n'; pos += o.length + 1; });
+  objs.forEach((o) => {
+    offsets.push(pos);
+    body += o + "\n";
+    pos += o.length + 1;
+  });
   const xrefPos = pos;
   let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
-  offsets.forEach(off => { xref += off.toString().padStart(10, '0') + ' 00000 n \n'; });
+  offsets.forEach((off) => {
+    xref += off.toString().padStart(10, "0") + " 00000 n \n";
+  });
   xref += `trailer<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xrefPos}\n%%EOF`;
   return header + body + xref;
 }
@@ -39,52 +66,65 @@ function buildMinimalPdf(w: number, h: number, stream: string): string {
 const Generate = () => {
   const [searchParams] = useSearchParams();
   const { toggleSave, savedPaletteIds } = usePaletteStore();
-  const { savePalette, user } = useCloudPalettes();
   const [showExport, setShowExport] = useState(false);
-  const [showNameModal, setShowNameModal] = useState(false);
-  const [paletteName, setPaletteName] = useState('');
   const [showCVD, setShowCVD] = useState(false);
 
   const [swatches, setSwatches] = useState<Swatch[]>(() => {
-    const urlColors = searchParams.get('colors');
+    const urlColors = searchParams.get("colors");
     if (urlColors) {
-      const cols = urlColors.split(',').map(c => `#${c.replace('#', '').toUpperCase()}`);
+      const cols = urlColors
+        .split(",")
+        .map((c) => `#${c.replace("#", "").toUpperCase()}`);
       return cols.map((color, i) => ({ id: `s-${i}`, color, locked: false }));
     }
-    return Array.from({ length: 5 }, (_, i) => ({ id: `s-${i}`, color: randomHex(), locked: false }));
+    return Array.from({ length: 5 }, (_, i) => ({
+      id: `s-${i}`,
+      color: randomHex(),
+      locked: false,
+    }));
   });
 
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [genKey, setGenKey] = useState(0);
 
   const generate = useCallback(() => {
-    setSwatches(prev => prev.map(s => s.locked ? s : { ...s, color: randomHex() }));
-    setGenKey(k => k + 1);
+    setSwatches((prev) =>
+      prev.map((s) => (s.locked ? s : { ...s, color: randomHex() })),
+    );
+    setGenKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && (e.target === document.body || e.target === document.documentElement)) {
+      if (
+        e.code === "Space" &&
+        (e.target === document.body || e.target === document.documentElement)
+      ) {
         e.preventDefault();
         generate();
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [generate]);
 
   const toggleLock = (id: string) => {
-    setSwatches(prev => prev.map(s => s.id === id ? { ...s, locked: !s.locked } : s));
+    setSwatches((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, locked: !s.locked } : s)),
+    );
   };
 
   const removeSwatch = (id: string) => {
-    if (swatches.length <= 2) return toast.error('Minimum 2 colors');
-    setSwatches(prev => prev.filter(s => s.id !== id));
+    if (swatches.length <= 2) return toast.error("Minimum 2 colors");
+    setSwatches((prev) => prev.filter((s) => s.id !== id));
   };
 
   const addSwatch = () => {
-    if (swatches.length >= 8) return toast.error('Maximum 8 colors');
-    setSwatches(prev => [...prev, { id: `s-${Date.now()}`, color: randomHex(), locked: false }]);
+    if (swatches.length >= 8) return toast.error("Maximum 8 colors");
+    setSwatches((prev) => [
+      ...prev,
+      { id: `s-${Date.now()}`, color: randomHex(), locked: false },
+    ]);
   };
 
   const copyHex = (hex: string) => {
@@ -93,75 +133,81 @@ const Generate = () => {
   };
 
   const copyCssVars = () => {
-    const css = swatches.map((s, i) => `  --color-${i + 1}: ${s.color};`).join('\n');
+    const css = swatches
+      .map((s, i) => `  --color-${i + 1}: ${s.color};`)
+      .join("\n");
     navigator.clipboard.writeText(`:root {\n${css}\n}`);
-    toast.success('CSS variables copied!');
+    toast.success("CSS variables copied!");
   };
 
   const copyTailwindConfig = () => {
     const colors: Record<string, string> = {};
-    swatches.forEach((s, i) => { colors[`palette-${i + 1}`] = s.color; });
+    swatches.forEach((s, i) => {
+      colors[`palette-${i + 1}`] = s.color;
+    });
     const config = `// tailwind.config.ts\nmodule.exports = {\n  theme: {\n    extend: {\n      colors: ${JSON.stringify(colors, null, 8).replace(/"/g, "'")}\n    }\n  }\n}`;
     navigator.clipboard.writeText(config);
-    toast.success('Tailwind config copied!');
+    toast.success("Tailwind config copied!");
   };
 
   const copyScssVars = () => {
-    const scss = swatches.map((s, i) => `$color-${i + 1}: ${s.color};`).join('\n');
+    const scss = swatches
+      .map((s, i) => `$color-${i + 1}: ${s.color};`)
+      .join("\n");
     navigator.clipboard.writeText(scss);
-    toast.success('SCSS variables copied!');
+    toast.success("SCSS variables copied!");
   };
 
   const copyHexArray = () => {
-    navigator.clipboard.writeText(JSON.stringify(swatches.map(s => s.color)));
-    toast.success('HEX array copied!');
+    navigator.clipboard.writeText(JSON.stringify(swatches.map((s) => s.color)));
+    toast.success("HEX array copied!");
   };
 
   const copyRgbArray = () => {
-    const arr = swatches.map(s => {
+    const arr = swatches.map((s) => {
       const rgb = hexToRgb(s.color);
       return rgb ? `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` : s.color;
     });
     navigator.clipboard.writeText(JSON.stringify(arr));
-    toast.success('RGB array copied!');
+    toast.success("RGB array copied!");
   };
 
   const copyHslArray = () => {
-    const arr = swatches.map(s => {
+    const arr = swatches.map((s) => {
       const rgb = hexToRgb(s.color);
       if (!rgb) return s.color;
       const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
       return `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
     });
     navigator.clipboard.writeText(JSON.stringify(arr));
-    toast.success('HSL array copied!');
+    toast.success("HSL array copied!");
   };
 
   const shareUrl = () => {
-    const colors = swatches.map(s => s.color.replace('#', '')).join(',');
+    const colors = swatches.map((s) => s.color.replace("#", "")).join(",");
     const url = `${window.location.origin}/generate?colors=${colors}`;
     navigator.clipboard.writeText(url);
-    toast.success('Share URL copied!');
+    toast.success("Share URL copied!");
   };
 
   const downloadPng = () => {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = swatches.length * 200;
     canvas.height = 400;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext("2d")!;
     swatches.forEach((s, i) => {
       ctx.fillStyle = s.color;
       ctx.fillRect(i * 200, 0, 200, 400);
       ctx.fillStyle = getContrastColor(s.color);
-      ctx.font = 'bold 16px DM Sans, sans-serif';
-      ctx.textAlign = 'center';
+      ctx.font = "bold 16px DM Sans, sans-serif";
+      ctx.textAlign = "center";
       ctx.fillText(s.color, i * 200 + 100, 210);
     });
-    const link = document.createElement('a');
-    link.download = 'palette.png';
+    const link = document.createElement("a");
+    link.download = "palette.png";
     link.href = canvas.toDataURL();
     link.click();
-    toast.success('PNG downloaded!');
+    toast.success("PNG downloaded!");
   };
 
   const downloadPdf = () => {
@@ -170,7 +216,7 @@ const Generate = () => {
     const margin = 40;
     const swatchH = 140;
     const swatchW = (w - margin * 2) / swatches.length;
-    let stream = '';
+    let stream = "";
     stream += `BT /F1 22 Tf ${margin} ${h - margin - 22} Td (PaletteFlow - Color Palette) Tj ET\n`;
     stream += `BT /F1 10 Tf ${margin} ${h - margin - 40} Td (Exported Palette) Tj ET\n`;
     const swatchY = h - margin - 70 - swatchH;
@@ -195,20 +241,20 @@ const Generate = () => {
       stream += `BT /F1 7 Tf ${x.toFixed(2)} ${textY - 35} Td (${name}) Tj ET\n`;
     });
     const pdf = buildMinimalPdf(w, h, stream);
-    const blob = new Blob([pdf], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.download = 'palette.pdf';
+    const blob = new Blob([pdf], { type: "application/pdf" });
+    const link = document.createElement("a");
+    link.download = "palette.pdf";
     link.href = URL.createObjectURL(blob);
     link.click();
     URL.revokeObjectURL(link.href);
-    toast.success('PDF downloaded!');
+    toast.success("PDF downloaded!");
   };
 
   const handleDragStart = (idx: number) => setDragIdx(idx);
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (dragIdx === null || dragIdx === idx) return;
-    setSwatches(prev => {
+    setSwatches((prev) => {
       const next = [...prev];
       const [moved] = next.splice(dragIdx, 1);
       next.splice(idx, 0, moved);
@@ -230,7 +276,7 @@ const Generate = () => {
                 initial={{ opacity: 0, scaleX: 0.8 }}
                 animate={{ opacity: 1, scaleX: 1 }}
                 exit={{ opacity: 0, scaleX: 0, width: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 className="flex-1 flex flex-col items-center justify-center gap-4 cursor-grab active:cursor-grabbing relative group min-h-[100px]"
                 style={{ backgroundColor: swatch.color }}
                 draggable
@@ -260,9 +306,16 @@ const Generate = () => {
                     if (!rgb) return null;
                     const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
                     return (
-                      <div className="text-[10px] font-mono space-y-0.5" style={{ color: contrast }}>
-                        <div>rgb({rgb.r}, {rgb.g}, {rgb.b})</div>
-                        <div>hsl({hsl.h}, {hsl.s}%, {hsl.l}%)</div>
+                      <div
+                        className="text-[10px] font-mono space-y-0.5"
+                        style={{ color: contrast }}
+                      >
+                        <div>
+                          rgb({rgb.r}, {rgb.g}, {rgb.b})
+                        </div>
+                        <div>
+                          hsl({hsl.h}, {hsl.s}%, {hsl.l}%)
+                        </div>
                         <div>{getColorName(swatch.color)}</div>
                       </div>
                     );
@@ -276,15 +329,28 @@ const Generate = () => {
                     className="p-2 rounded-lg hover:bg-black/10 transition-colors"
                     style={{ color: contrast }}
                   >
-                    {swatch.locked ? <Lock className="h-5 w-5" /> : <Unlock className="h-5 w-5" />}
+                    {swatch.locked ? (
+                      <Lock className="h-5 w-5" />
+                    ) : (
+                      <Unlock className="h-5 w-5" />
+                    )}
                   </motion.button>
-                  <button onClick={() => copyHex(swatch.color)} className="p-2 rounded-lg hover:bg-black/10 transition-colors" style={{ color: contrast }}>
+                  <button
+                    onClick={() => copyHex(swatch.color)}
+                    className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+                    style={{ color: contrast }}
+                  >
                     <Copy className="h-5 w-5" />
                   </button>
-                  <button onClick={() => removeSwatch(swatch.id)} className="p-2 rounded-lg hover:bg-black/10 transition-colors" style={{ color: contrast }}>
+                  <button
+                    onClick={() => removeSwatch(swatch.id)}
+                    className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+                    style={{ color: contrast }}
+                  >
                     <Trash2 className="h-5 w-5" />
                   </button>
                 </div>
+
                 {swatch.locked && (
                   <motion.div
                     initial={{ scale: 0 }}
@@ -302,57 +368,79 @@ const Generate = () => {
 
       {showCVD && (
         <div className="px-4 py-3 border-t border-border bg-card/50">
-          <PaletteCVDSimulator colors={swatches.map(s => s.color)} />
+          <PaletteCVDSimulator colors={swatches.map((s) => s.color)} />
         </div>
       )}
 
       <div className="border-t border-border bg-card px-3 sm:px-4 py-3 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Button onClick={generate} className="gap-2" aria-label="Generate new palette (Space)">
+          <Button
+            onClick={generate}
+            className="gap-2"
+            aria-label="Generate new palette (Space)"
+          >
             <RefreshCw className="h-4 w-4" />
             Generate
           </Button>
           <Tooltip>
             <TooltipTrigger asChild>
               <span>
-                <Button variant="outline" onClick={addSwatch} className="gap-2" disabled={swatches.length >= 8} aria-label="Add color">
+                <Button
+                  variant="outline"
+                  onClick={addSwatch}
+                  className="gap-2"
+                  disabled={swatches.length >= 8}
+                  aria-label="Add color"
+                >
                   <Plus className="h-4 w-4" />
                   Add
                 </Button>
               </span>
             </TooltipTrigger>
-            <TooltipContent>{swatches.length >= 8 ? 'Maximum 8 colors' : 'Add a new color (max 8)'}</TooltipContent>
+            <TooltipContent>
+              {swatches.length >= 8
+                ? "Maximum 8 colors"
+                : "Add a new color (max 8)"}
+            </TooltipContent>
           </Tooltip>
-          <span className="text-xs text-muted-foreground hidden md:inline">Press SPACE to generate</span>
+          <span className="text-xs text-muted-foreground hidden md:inline">
+            Press SPACE to generate
+          </span>
         </div>
+
         <div className="flex items-center gap-2 flex-nowrap overflow-x-auto scrollbar-hide max-w-full">
-          {user && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { setPaletteName(''); setShowNameModal(true); }}
-              className="gap-1 shrink-0"
-              aria-label="Save palette to cloud"
-            >
-              <CloudUpload className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Save to Cloud</span>
-            </Button>
-          )}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant={showCVD ? "default" : "outline"} size="sm" onClick={() => setShowCVD(!showCVD)} className="gap-1 shrink-0" aria-pressed={showCVD} aria-label="Toggle color blindness simulator">
+              <Button
+                variant={showCVD ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowCVD(!showCVD)}
+                className="gap-1 shrink-0"
+                aria-pressed={showCVD}
+                aria-label="Toggle color blindness simulator"
+              >
                 <Eye className="h-3.5 w-3.5" /> CVD
               </Button>
             </TooltipTrigger>
             <TooltipContent>Color blindness simulator</TooltipContent>
           </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={shareUrl} className="gap-1 shrink-0" aria-label="Copy share URL">
-                <Share2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Share</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={shareUrl}
+                className="gap-1 shrink-0"
+                aria-label="Copy share URL"
+              >
+                <Share2 className="h-3.5 w-3.5" />{" "}
+                <span className="hidden sm:inline">Share</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Copy a share URL with these colors</TooltipContent>
           </Tooltip>
+
           <div className="relative shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -369,7 +457,9 @@ const Generate = () => {
                   <Code className="h-3.5 w-3.5" /> Export ▾
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Copy as CSS / Tailwind / SCSS / arrays</TooltipContent>
+              <TooltipContent>
+                Copy as CSS / Tailwind / SCSS / arrays
+              </TooltipContent>
             </Tooltip>
             <AnimatePresence>
               {showExport && (
@@ -381,17 +471,20 @@ const Generate = () => {
                   className="absolute bottom-full mb-2 right-0 z-30 bg-popover border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px]"
                 >
                   {[
-                    { label: 'CSS Variables', fn: copyCssVars },
-                    { label: 'Tailwind Config', fn: copyTailwindConfig },
-                    { label: 'SCSS Variables', fn: copyScssVars },
-                    { label: 'HEX Array', fn: copyHexArray },
-                    { label: 'RGB Array', fn: copyRgbArray },
-                    { label: 'HSL Array', fn: copyHslArray },
+                    { label: "CSS Variables", fn: copyCssVars },
+                    { label: "Tailwind Config", fn: copyTailwindConfig },
+                    { label: "SCSS Variables", fn: copyScssVars },
+                    { label: "HEX Array", fn: copyHexArray },
+                    { label: "RGB Array", fn: copyRgbArray },
+                    { label: "HSL Array", fn: copyHslArray },
                   ].map(({ label, fn }) => (
                     <button
                       key={label}
                       role="menuitem"
-                      onClick={() => { fn(); setShowExport(false); }}
+                      onClick={() => {
+                        fn();
+                        setShowExport(false);
+                      }}
                       className="block w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-muted transition-colors"
                     >
                       {label}
@@ -401,17 +494,33 @@ const Generate = () => {
               )}
             </AnimatePresence>
           </div>
+
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={downloadPng} className="gap-1 shrink-0" disabled={swatches.length === 0} aria-label="Download palette as PNG">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadPng}
+                className="gap-1 shrink-0"
+                disabled={swatches.length === 0}
+                aria-label="Download palette as PNG"
+              >
                 <Download className="h-3.5 w-3.5" /> PNG
               </Button>
             </TooltipTrigger>
             <TooltipContent>Download a PNG image</TooltipContent>
           </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={downloadPdf} className="gap-1 shrink-0" disabled={swatches.length === 0} aria-label="Download palette as PDF">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadPdf}
+                className="gap-1 shrink-0"
+                disabled={swatches.length === 0}
+                aria-label="Download palette as PDF"
+              >
                 <FileText className="h-3.5 w-3.5" /> PDF
               </Button>
             </TooltipTrigger>
@@ -419,61 +528,6 @@ const Generate = () => {
           </Tooltip>
         </div>
       </div>
-
-      {/* Name palette modal */}
-      <AnimatePresence>
-        {showNameModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm"
-            onClick={() => setShowNameModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-card border border-border rounded-2xl p-6 shadow-xl max-w-sm w-full mx-4"
-            >
-              <h3 className="text-lg font-semibold text-foreground mb-1">Name Your Palette</h3>
-              <p className="text-sm text-muted-foreground mb-4">Give your palette a memorable name before saving.</p>
-              <div className="flex h-12 rounded-xl overflow-hidden mb-4">
-                {swatches.map((s, i) => (
-                  <div key={i} className="flex-1" style={{ backgroundColor: s.color }} />
-                ))}
-              </div>
-              <input
-                autoFocus
-                value={paletteName}
-                onChange={e => setPaletteName(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && paletteName.trim()) {
-                    savePalette(paletteName.trim(), swatches.map(s => s.color));
-                    setShowNameModal(false);
-                  }
-                }}
-                placeholder="e.g. Sunset Vibes"
-                className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring mb-4"
-              />
-              <div className="flex gap-3 justify-end">
-                <Button variant="outline" size="sm" onClick={() => setShowNameModal(false)}>Cancel</Button>
-                <Button
-                  size="sm"
-                  disabled={!paletteName.trim()}
-                  onClick={() => {
-                    savePalette(paletteName.trim(), swatches.map(s => s.color));
-                    setShowNameModal(false);
-                  }}
-                >
-                  Save to Cloud
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
