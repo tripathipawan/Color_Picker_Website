@@ -17,6 +17,7 @@ const Footer = () => (
           <Link to="/generate" className="hover:text-foreground transition-colors">Generator</Link>
           <Link to="/gradient" className="hover:text-foreground transition-colors">Gradients</Link>
           <Link to="/contrast" className="hover:text-foreground transition-colors">Contrast</Link>
+          <Link to="/harmony" className="hover:text-foreground transition-colors">Harmony</Link>
           <Link to="/saved" className="hover:text-foreground transition-colors">Saved</Link>
         </nav>
 

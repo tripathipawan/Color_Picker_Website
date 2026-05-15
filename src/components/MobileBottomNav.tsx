@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Wand2, Bookmark, MoreHorizontal } from 'lucide-react';
+import { Home, Wand2, Bookmark, MoreHorizontal, Shapes } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -17,6 +17,7 @@ const moreItems = [
   { to: '/gradient', label: 'Gradient', icon: Blend },
   { to: '/image-picker', label: 'Image', icon: Image },
   { to: '/contrast', label: 'Contrast', icon: Contrast },
+  { to: '/harmony', label: 'Harmony', icon: Shapes },
 ];
 
 const MobileBottomNav = () => {
